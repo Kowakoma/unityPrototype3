@@ -4,38 +4,50 @@ using UnityEngine;
 
 public class PlayerControllerX : MonoBehaviour
 {
-    public bool gameOver;
+    public bool gameOver = false;
+    public bool isLowEnough;
 
     public float floatForce;
-    private float gravityModifier = 1.5f;
+    private float gravityModifier = 1.0f;
     private Rigidbody playerRb;
-
+    private float topBound = 14.5f;
     public ParticleSystem explosionParticle;
     public ParticleSystem fireworksParticle;
 
     private AudioSource playerAudio;
     public AudioClip moneySound;
     public AudioClip explodeSound;
+    public AudioClip bounceSound;
 
 
     // Start is called before the first frame update
     void Start()
     {
+        playerRb = GetComponent<Rigidbody>();
         Physics.gravity *= gravityModifier;
         playerAudio = GetComponent<AudioSource>();
 
         // Apply a small upward force at the start of the game
-        playerRb.AddForce(Vector3.up * 5, ForceMode.Impulse);
+        playerRb.AddForce(Vector3.up * floatForce, ForceMode.Impulse);
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        // While space is pressed and player is low enough, float up
-        if (Input.GetKey(KeyCode.Space) && !gameOver)
+        if (transform.position.y < topBound)
         {
-            playerRb.AddForce(Vector3.up * floatForce);
+            isLowEnough = true;
+        }
+        else
+        {
+            isLowEnough = false;
+        }
+
+        // While space is pressed and player is low enough, float up
+        if (Input.GetKeyDown(KeyCode.Space) && !gameOver && isLowEnough)
+        {
+            playerRb.AddForce(Vector3.up * floatForce, ForceMode.Impulse);
         }
     }
 
@@ -49,7 +61,7 @@ public class PlayerControllerX : MonoBehaviour
             gameOver = true;
             Debug.Log("Game Over!");
             Destroy(other.gameObject);
-        } 
+        }
 
         // if player collides with money, fireworks
         else if (other.gameObject.CompareTag("Money"))
@@ -58,6 +70,11 @@ public class PlayerControllerX : MonoBehaviour
             playerAudio.PlayOneShot(moneySound, 1.0f);
             Destroy(other.gameObject);
 
+        }
+        else if (other.gameObject.CompareTag("Ground"))
+        {
+            playerAudio.PlayOneShot(bounceSound, 1.0f);
+            playerRb.AddForce(Vector3.up * floatForce, ForceMode.Impulse);
         }
 
     }
